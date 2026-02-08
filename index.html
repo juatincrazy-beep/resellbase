@@ -1,0 +1,1080 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Resellbase – Marketplace & Vergleich für Reseller</title>
+  <meta name="description" content="Resellbase: Listings finden, importieren, vergleichen und analysieren. Live über eBay (offizielle API via Serverless) + Link-Preview für Vinted/Kleinanzeigen."/>
+  <meta name="theme-color" content="#1c1813"/>
+
+  <style>
+    :root{
+      --bg:#1c1813; --bg2:#231f1a;
+      --card:#2a251f; --card2:#241f19;
+      --border:rgba(255,244,230,.12);
+      --text:#f5efe6; --muted:#bfb5a6;
+      --accent:#d2b48c; --accent2:#cfa36a;
+      --ok:#9ad29a; --warn:#f0c36a; --bad:#ff6b6b;
+      --radius:18px; --radius2:14px;
+      --shadow:0 20px 55px rgba(0,0,0,.45);
+      --max:1200px;
+      --font: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--font); color:var(--text);
+      background:
+        radial-gradient(900px 500px at 20% -10%, rgba(210,180,140,.15), transparent 60%),
+        radial-gradient(900px 500px at 86% -10%, rgba(207,163,106,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+      overflow-x:hidden;
+    }
+    a{color:inherit; text-decoration:none}
+    .wrap{max-width:var(--max); margin:0 auto; padding:24px}
+
+    header{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter:blur(10px);
+      background:rgba(28,24,19,.82);
+      border-bottom:1px solid var(--border);
+    }
+    .nav{display:flex; align-items:center; justify-content:space-between; gap:14px}
+    .brand{display:flex; align-items:center; gap:10px}
+    .logo{width:36px; height:36px; border-radius:12px; background:conic-gradient(from 210deg, rgba(210,180,140,.95), rgba(207,163,106,.90), rgba(210,180,140,.75)); box-shadow:0 14px 36px rgba(0,0,0,.45)}
+    .brand b{font-size:16px; letter-spacing:.2px}
+    .brand span{display:block; font-size:12px; color:rgba(245,239,230,.68)}
+    .links{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .pill{padding:9px 12px; border-radius:999px; border:1px solid var(--border); background:rgba(42,37,31,.6); font-size:14px; cursor:pointer}
+    .pill:hover{background:rgba(42,37,31,.85)}
+    .pill.primary{border:0; background:linear-gradient(135deg, var(--accent), var(--accent2)); color:#1c1813; font-weight:900}
+
+    .hero{padding:46px 0 26px}
+    .heroTop{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap}
+    h1{margin:0; font-size:clamp(26px,3.5vw,44px); line-height:1.12; max-width:780px}
+    .sub{margin:10px 0 0; color:rgba(245,239,230,.72); max-width:760px; font-size:15px}
+    .heroActions{display:flex; gap:10px; flex-wrap:wrap}
+
+    .callout{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap}
+    .chip{padding:8px 10px; border-radius:999px; border:1px solid rgba(255,244,230,.14); background:rgba(28,24,19,.35); color:rgba(245,239,230,.86); font-size:12px}
+    .chip strong{color:rgba(245,239,230,.98)}
+
+    .steps{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:18px}
+    .step{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow)}
+    .step b{display:flex; align-items:center; gap:10px}
+    .dot{width:10px; height:10px; border-radius:999px; background:rgba(210,180,140,.9)}
+    .step span{display:block; margin-top:6px; color:var(--muted); font-size:13px}
+
+    section{margin-top:28px}
+    h2{margin:0 0 10px; font-size:20px}
+    .panel{background:linear-gradient(180deg, #2b2620, var(--card2)); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px}
+
+    label{font-size:12px; color:rgba(245,239,230,.72)}
+    input,select,textarea{width:100%; padding:12px 12px; border-radius:14px; border:1px solid var(--border); background:rgba(28,24,19,.35); color:var(--text); outline:none}
+    input::placeholder,textarea::placeholder{color:rgba(245,239,230,.45)}
+    textarea{min-height:98px; resize:vertical}
+    .controls{display:grid; gap:10px}
+    @media(min-width:980px){.controls{grid-template-columns:1.2fr .62fr .62fr auto; align-items:end}}
+
+    .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:16px; margin-top:14px}
+    .card{background:linear-gradient(180deg,#2b2620,#241f19); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column}
+    .thumb{height:168px; position:relative; background:rgba(0,0,0,.2)}
+    .thumb img{width:100%; height:100%; object-fit:cover}
+    .badge{position:absolute; top:10px; left:10px; background:rgba(0,0,0,.55); border:1px solid rgba(255,244,230,.14); padding:6px 10px; border-radius:999px; font-size:12px}
+    .badge.ebay{color:rgba(154,210,154,.95); border-color:rgba(154,210,154,.22)}
+    .badge.vinted{color:rgba(240,195,106,.95); border-color:rgba(240,195,106,.22)}
+    .badge.kleinanzeigen{color:rgba(164,212,240,.95); border-color:rgba(164,212,240,.22)}
+    .badge.demo{color:rgba(210,180,140,.95); border-color:rgba(210,180,140,.22)}
+
+    .content{padding:14px; display:flex; flex-direction:column; gap:8px; flex:1}
+    .title{font-weight:850; line-height:1.25}
+    .meta{font-size:13px; color:rgba(245,239,230,.70)}
+    .priceRow{display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-top:2px}
+    .price{font-size:22px; font-weight:950}
+
+    .btn{padding:11px 14px; border-radius:999px; border:1px solid var(--border); background:rgba(28,24,19,.25); color:var(--text); cursor:pointer; font-weight:850; font-size:13px}
+    .btn:hover{background:rgba(28,24,19,.45)}
+    .btn.primary{border:0; background:linear-gradient(135deg, var(--accent), var(--accent2)); color:#1c1813}
+    .btn.ghost{background:rgba(42,37,31,.55)}
+
+    .rowActions{display:flex; gap:8px; flex-wrap:wrap; margin-top:auto}
+
+    .compareBar{position:sticky; bottom:14px; z-index:40; display:none; margin-top:14px}
+    .compareInner{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:999px; border:1px solid rgba(255,244,230,.14); background:rgba(28,24,19,.70); backdrop-filter:blur(12px); box-shadow:var(--shadow)}
+    .compareText{font-size:13px; color:rgba(245,239,230,.88)}
+
+    .modalWrap{position:fixed; inset:0; background:rgba(0,0,0,.56); display:none; align-items:center; justify-content:center; padding:18px; z-index:100}
+    .modalWrap.open{display:flex}
+    .modal{max-width:980px; width:100%; background:linear-gradient(180deg,#2b2620,#241f19); border:1px solid rgba(255,244,230,.14); border-radius:22px; box-shadow:var(--shadow); overflow:hidden}
+    .modalHeader{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px solid rgba(255,244,230,.10); flex-wrap:wrap}
+    .modalHeader b{font-size:14px}
+    .modalBody{padding:16px}
+    .two{display:grid; gap:12px}
+    @media(min-width:900px){.two{grid-template-columns:1fr 1fr}}
+    .metric{border:1px solid rgba(255,244,230,.12); border-radius:18px; padding:12px; background:rgba(28,24,19,.25)}
+    .metric .top{display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .metric b{font-size:14px}
+    .metric small{color:rgba(245,239,230,.60)}
+    .big{font-size:24px; font-weight:950; margin-top:8px}
+    .hint{color:rgba(245,239,230,.74); font-size:13px; margin-top:8px}
+
+    table{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border:1px solid rgba(255,244,230,.12); border-radius:18px; background:rgba(28,24,19,.22); margin-top:12px}
+    th,td{padding:10px 12px; text-align:left; border-bottom:1px solid rgba(255,244,230,.08); font-size:14px}
+    th{background:rgba(28,24,19,.38); color:rgba(245,239,230,.85)}
+    tr:last-child td{border-bottom:0}
+
+    details{border:1px solid rgba(255,244,230,.12); border-radius:18px; padding:12px; background:rgba(28,24,19,.22)}
+    details summary{cursor:pointer; font-weight:850}
+    pre{margin:10px 0 0; padding:12px; border-radius:14px; border:1px solid rgba(255,244,230,.12); background:rgba(0,0,0,.25); overflow:auto}
+    code{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:12px; color:rgba(245,239,230,.92)}
+
+    .toast{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:rgba(28,24,19,.88); border:1px solid rgba(255,244,230,.16); color:var(--text); padding:10px 14px; border-radius:999px; display:none; box-shadow:var(--shadow); z-index:200; font-size:13px}
+
+    footer{margin-top:44px; border-top:1px solid var(--border); padding:22px 0; color:rgba(245,239,230,.68); font-size:12px}
+    .foot{display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center}
+    .note{color:rgba(245,239,230,.70)}
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top" aria-label="Resellbase Start">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <b>Resellbase</b>
+        <span>Globaler Hub für Reseller</span>
+      </div>
+    </a>
+    <div class="links">
+      <a class="pill" href="#market">Marketplace</a>
+      <a class="pill" href="#import">Import</a>
+      <a class="pill" href="#tools">Analyse</a>
+      <button class="pill" id="btnCompareTop" type="button">Vergleichen (0/2)</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="top">
+  <section class="hero">
+    <div class="heroTop">
+      <div>
+        <h1>Marketplace + Vergleich + Analyse – ohne Zeit zu verschwenden.</h1>
+        <p class="sub">
+          In der <b>Alpha</b> kannst du schon Listings vergleichen & analysieren.
+          <b>Live‑Daten</b> kommen über <b>eBay (offizielle API via Serverless)</b>.
+          Für <b>Vinted</b> & <b>Kleinanzeigen</b> nutzt du zunächst <b>Link‑Import</b> (OpenGraph‑Preview).
+        </p>
+        <div class="callout" aria-label="Alpha Status">
+          <span class="chip"><strong>Live</strong>: eBay Suche</span>
+          <span class="chip"><strong>Import</strong>: Vinted/Kleinanzeigen Links</span>
+          <span class="chip"><strong>Fallback</strong>: Demo Seed (12+)</span>
+        </div>
+      </div>
+      <div class="heroActions">
+        <button class="pill primary" id="btnTrending" type="button">Trending laden</button>
+        <button class="pill" id="btnDemo" type="button">Demo laden</button>
+      </div>
+    </div>
+
+    <div class="steps" aria-label="So funktioniert's">
+      <div class="step"><b><span class="dot"></span> 1) Finden</b><span>eBay Suche (API) oder Links importieren.</span></div>
+      <div class="step"><b><span class="dot"></span> 2) Vergleichen</b><span>2 Listings wählen → Käufer/Verkäufer‑Sicht.</span></div>
+      <div class="step"><b><span class="dot"></span> 3) Entscheiden</b><span>Range, Gebühren‑Netto und Speed‑Schätzung.</span></div>
+    </div>
+  </section>
+
+  <section id="market">
+    <h2>Marketplace</h2>
+    <div class="panel">
+      <div class="controls">
+        <div>
+          <label for="q">Suche</label>
+          <input id="q" placeholder="z. B. AirPods Pro 2, Jordan 1, iPhone 13…"/>
+        </div>
+        <div>
+          <label for="source">Quelle</label>
+          <select id="source">
+            <option value="ebay">eBay (Live via API)</option>
+            <option value="demo">Demo (Alpha Seed)</option>
+          </select>
+        </div>
+        <div>
+          <label for="limit">Ergebnisse</label>
+          <select id="limit">
+            <option value="12">12</option>
+            <option value="24">24</option>
+            <option value="36">36</option>
+          </select>
+        </div>
+        <div>
+          <button class="btn primary" id="btnSearch" type="button">Suchen</button>
+        </div>
+      </div>
+      <p class="note" style="margin:10px 0 0;">
+        <b>Warum nicht direkt im Browser?</b> eBay braucht API‑Keys (CORS). Deshalb: <code>/.netlify/functions/ebay_search</code>.
+        Vinted/Kleinanzeigen haben keine einfache öffentliche Such‑API → in der Alpha per Link‑Import.
+      </p>
+    </div>
+
+    <div id="results" class="grid" aria-label="Listings"></div>
+
+    <div class="compareBar" id="compareBar">
+      <div class="compareInner">
+        <div class="compareText" id="compareText">Vergleich: 0/2 ausgewählt</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn" id="btnClearCompare" type="button">Leeren</button>
+          <button class="btn primary" id="btnOpenCompare" type="button">Vergleichen</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="import">
+    <h2>Import (Vinted / Kleinanzeigen / eBay Link)</h2>
+    <div class="panel">
+      <div class="controls" style="grid-template-columns:1.4fr auto;">
+        <div>
+          <label for="importUrl">Link einfügen</label>
+          <input id="importUrl" placeholder="https://www.vinted... oder https://www.kleinanzeigen.de/..."/>
+        </div>
+        <div>
+          <button class="btn primary" id="btnImport" type="button">Importieren</button>
+        </div>
+      </div>
+      <p class="note" style="margin:10px 0 0;">
+        Import nutzt <b>OpenGraph‑Preview</b> (Titel/Bild/URL). Preis ist manchmal nicht im OG enthalten → dann bleibt er 0 und du trägst ihn kurz ein (kommt als nächstes Feature).
+      </p>
+
+      <details style="margin-top:12px;">
+        <summary>Backend (Netlify Functions) – Copy/Paste Setup</summary>
+        <p class="note" style="margin:10px 0 0;">
+          Diese Website ist Frontend‑only. Für Live‑Daten brauchst du <b>Netlify Functions</b>. Lege im Projekt an:
+          <code>netlify/functions/</code> + <code>netlify.toml</code>.
+        </p>
+
+        <pre><code># netlify.toml
+[functions]
+  node_bundler = "esbuild"
+</code></pre>
+
+        <pre><code>// netlify/functions/ebay_search.js
+export default async (req) =&gt; {
+  try {
+    const url = new URL(req.url);
+    const q = (url.searchParams.get("q") || "").trim();
+    const limit = Math.min(Number(url.searchParams.get("limit") || 12), 50);
+
+    if (!q) {
+      return new Response(JSON.stringify({ items: [] }), {
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    const token = process.env.EBAY_OAUTH_TOKEN;
+    const marketplace = process.env.EBAY_MARKETPLACE_ID || "EBAY_DE";
+    if (!token) return new Response("Missing EBAY_OAUTH_TOKEN", { status: 500 });
+
+    const apiUrl = new URL("https://api.ebay.com/buy/browse/v1/item_summary/search");
+    apiUrl.searchParams.set("q", q);
+    apiUrl.searchParams.set("limit", String(limit));
+
+    const r = await fetch(apiUrl.toString(), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "X-EBAY-C-MARKETPLACE-ID": marketplace,
+      },
+    });
+
+    if (!r.ok) return new Response(await r.text(), { status: r.status });
+
+    const data = await r.json();
+    const items = (data.itemSummaries || []).map((it) =&gt; {
+      const price = Number(it.price?.value || 0);
+      const shipping = Number(it.shippingOptions?.[0]?.shippingCost?.value || 0);
+      return {
+        id: it.itemId,
+        title: it.title,
+        price,
+        shipping,
+        condition: it.condition || "—",
+        url: it.itemWebUrl || "",
+        image: it.image?.imageUrl || it.thumbnailImages?.[0]?.imageUrl || "",
+      };
+    });
+
+    return new Response(JSON.stringify({ items }), {
+      headers: { "content-type": "application/json" },
+    });
+  } catch (e) {
+    return new Response(String(e?.message || e), { status: 500 });
+  }
+};
+</code></pre>
+
+        <pre><code>// netlify/functions/og_preview.js
+// Works for Vinted + Kleinanzeigen (and many other pages)
+function pickMeta(html, key, type="property") {
+  const re = new RegExp(
+    `&lt;meta[^&gt;]+${type}=[\"']${key}[\"'][^&gt;]+content=[\"']([^\"']+)[\"'][^&gt;]*&gt;`,
+    "i"
+  );
+  const m = html.match(re);
+  return m ? m[1] : "";
+}
+
+export default async (req) =&gt; {
+  try {
+    const u = new URL(req.url);
+    const url = u.searchParams.get("url");
+    if (!url) return new Response("Missing url", { status: 400 });
+
+    const r = await fetch(url, {
+      headers: {
+        "user-agent":
+          "Mozilla/5.0 (compatible; ResellbasePreview/1.0; +https://example.com)",
+      },
+    });
+    const html = await r.text();
+
+    const title = pickMeta(html, "og:title") || pickMeta(html, "title", "name") || "Listing";
+    const image = pickMeta(html, "og:image") || "";
+    const canonical = pickMeta(html, "og:url") || url;
+
+    // price often NOT available in OG. Keep 0 if missing.
+    const priceStr =
+      pickMeta(html, "product:price:amount") ||
+      pickMeta(html, "og:price:amount") ||
+      "";
+
+    const currency =
+      pickMeta(html, "product:price:currency") ||
+      pickMeta(html, "og:price:currency") ||
+      "EUR";
+
+    return new Response(
+      JSON.stringify({
+        title,
+        image,
+        url: canonical,
+        price: Number(priceStr) || 0,
+        currency,
+      }),
+      { headers: { "content-type": "application/json" } }
+    );
+  } catch (e) {
+    return new Response(String(e?.message || e), { status: 500 });
+  }
+};
+</code></pre>
+
+        <p class="note" style="margin-top:10px;">
+          Netlify → Site settings → Environment variables:
+          <code>EBAY_OAUTH_TOKEN</code>, <code>EBAY_MARKETPLACE_ID</code> (z. B. <code>EBAY_DE</code>).
+        </p>
+      </details>
+    </div>
+  </section>
+
+  <section id="tools">
+    <h2>Analyse</h2>
+    <div class="panel">
+      <p class="note" style="margin-top:0;">Klicke bei einem Listing auf <b>Analysieren</b> oder importiere einen Link. Dann erscheint hier die Auswertung.</p>
+
+      <div class="two" style="margin-top:12px;">
+        <div class="metric">
+          <div class="top"><b>Preisrange (Schätzung)</b><small>Sweet Spot</small></div>
+          <div class="big" id="outRange">—</div>
+          <div class="hint" id="outSweet">—</div>
+        </div>
+        <div class="metric">
+          <div class="top"><b>Sell‑Speed (Schätzung)</b><small>verkauft in</small></div>
+          <div class="big" id="outDays">—</div>
+          <div class="hint" id="outSpeedHint">—</div>
+        </div>
+      </div>
+
+      <div class="metric" style="margin-top:12px;">
+        <div class="top"><b>Optimierter Titel</b><small>Copy</small></div>
+        <div class="hint" id="outTitle">—</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+          <button class="btn" id="btnCopyTitle" type="button">Titel kopieren</button>
+          <button class="btn" id="btnCopySummary" type="button">Summary kopieren</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="foot">
+      <div>
+        <b style="color:var(--text); font-size:14px;">Resellbase</b><br/>
+        <span class="note">Alpha: Live‑eBay + Link‑Import • Dark‑Beige • Ohne Login</span>
+      </div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <a class="pill" href="#market">Marketplace</a>
+        <a class="pill" href="#import">Import</a>
+        <a class="pill" href="#tools">Analyse</a>
+      </div>
+    </div>
+    <p class="note" style="margin-top:12px;">
+      <b>Hinweis:</b> Resellbase liefert Schätzungen – keine Garantie. Für Vinted/Kleinanzeigen sind Such‑APIs meist nicht öffentlich; daher in der Alpha per Link‑Preview.
+    </p>
+  </footer>
+</main>
+
+<!-- Compare Modal -->
+<div class="modalWrap" id="compareModal" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Vergleich">
+    <div class="modalHeader">
+      <div>
+        <b>Vergleich (2 Listings)</b>
+        <div class="note" style="margin-top:4px;">Käufer: günstigster All‑in. Verkäufer: höchstes Netto (mit Gebühren).</div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <label style="display:flex; gap:8px; align-items:center; font-size:12px; color:rgba(245,239,230,.72);">
+          Gebühren %
+          <input id="feePct" type="number" min="0" max="50" step="0.1" placeholder="12" style="width:110px;"/>
+        </label>
+        <select id="perspective" style="width:190px;">
+          <option value="buyer">Käufer (All‑in)</option>
+          <option value="seller">Verkäufer (Netto)</option>
+        </select>
+        <button class="btn" id="btnCloseCompare" type="button">Schließen</button>
+      </div>
+    </div>
+    <div class="modalBody">
+      <div class="two">
+        <div class="metric">
+          <div class="top"><b>Listing A</b><small id="cmpAmeta">—</small></div>
+          <div class="big" id="cmpAprice">—</div>
+          <div class="hint" id="cmpAall">—</div>
+        </div>
+        <div class="metric">
+          <div class="top"><b>Listing B</b><small id="cmpBmeta">—</small></div>
+          <div class="big" id="cmpBprice">—</div>
+          <div class="hint" id="cmpBall">—</div>
+        </div>
+      </div>
+
+      <div class="metric" style="margin-top:12px;">
+        <div class="top"><b>Empfehlung</b><small>Winner</small></div>
+        <div class="hint" id="cmpWinner">—</div>
+      </div>
+
+      <table aria-label="Vergleich Tabelle">
+        <thead><tr><th>Faktor</th><th>A</th><th>B</th></tr></thead>
+        <tbody>
+          <tr><td>Preis</td><td id="tAprice">—</td><td id="tBprice">—</td></tr>
+          <tr><td>Versand</td><td id="tAship">—</td><td id="tBship">—</td></tr>
+          <tr><td>All‑in</td><td id="tAall">—</td><td id="tBall">—</td></tr>
+          <tr><td>Gebühren (geschätzt)</td><td id="tAfee">—</td><td id="tBfee">—</td></tr>
+          <tr><td>Netto</td><td id="tAnet">—</td><td id="tBnet">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite">OK</div>
+
+<script>
+  // ============================================================
+  // Resellbase Alpha
+  // - eBay: Official API via Netlify Function (server-side)
+  // - Vinted + Kleinanzeigen: Link Import via OpenGraph Preview
+  // - Demo Seed: 12 items with real representative images (safe fallback)
+  // ============================================================
+
+  const $ = (id) => document.getElementById(id);
+  const toastEl = $('toast');
+
+  function placeholderDataUri(title){
+    const safe = String(title || 'Item').slice(0, 30).replace(/[<>]/g,'');
+    const svg = `\
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700">\
+  <defs>\
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">\
+      <stop offset="0" stop-color="#1b160f"/>\
+      <stop offset="1" stop-color="#2e261c"/>\
+    </linearGradient>\
+  </defs>\
+  <rect width="1200" height="700" fill="url(#g)"/>\
+  <text x="80" y="360" font-size="64" font-family="system-ui" fill="rgba(245,239,230,.92)">${safe}</text>\
+  <text x="80" y="430" font-size="28" font-family="system-ui" fill="rgba(245,239,230,.60)">Bild nicht verfügbar</text>\
+</svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+
+  const euro = (n) => {
+    const v = Number(n);
+    if (!Number.isFinite(v)) return '—';
+    return '€' + (Math.round(v * 100) / 100).toFixed(2);
+  };
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+  const showToast = (msg) => {
+    toastEl.textContent = msg || 'OK';
+    toastEl.style.display = 'block';
+    setTimeout(() => (toastEl.style.display = 'none'), 1400);
+  };
+
+  /** @type {Array<{id:string, source:'demo'|'ebay'|'vinted'|'kleinanzeigen', title:string, price:number, shipping:number, currency?:string, condition?:string, url?:string, image?:string}>} */
+  let listings = [];
+  let compareIds = [];
+  let activeItem = null;
+
+  // Demo seed note:
+  // For 100% exact matching images per product name, you need LIVE platform data.
+  // The demo uses representative photos (or public domain/CC images). Live eBay results will be exact.
+  const DEMO = [
+    {
+      id: 'demo_airpods_pro_2',
+      source: 'demo',
+      title: 'AirPods Pro (2. Generation) – Case + Earbuds',
+      price: 169,
+      shipping: 4.99,
+      condition: 'Wie neu',
+      url: 'https://commons.wikimedia.org/wiki/File:AirPods_Pro_(2nd_generation).jpg',
+      image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/AirPods_Pro_%282nd_generation%29.jpg/800px-AirPods_Pro_%282nd_generation%29.jpg'
+    },
+    {
+      id: 'demo_iphone_13',
+      source: 'demo',
+      title: 'iPhone 13 – 128 GB – Midnight',
+      price: 399,
+      shipping: 0,
+      condition: 'Sehr gut',
+      url: 'https://commons.wikimedia.org/wiki/File:IPhone_13_and_iPhone_14_Plus.jpg',
+      image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/IPhone_13_and_iPhone_14_Plus.jpg/768px-IPhone_13_and_iPhone_14_Plus.jpg'
+    },
+    {
+      id: 'demo_ps5_disc',
+      source: 'demo',
+      title: 'PlayStation 5 (Disk Edition) + DualSense',
+      price: 429,
+      shipping: 9.99,
+      condition: 'Gut',
+      url: 'https://commons.wikimedia.org/wiki/File:Black_and_white_Playstation_5_base_edition_with_controller.png',
+      image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Black_and_white_Playstation_5_base_edition_with_controller.png/640px-Black_and_white_Playstation_5_base_edition_with_controller.png'
+    },
+    {
+      id: 'demo_switch_console',
+      source: 'demo',
+      title: 'Nintendo Switch (Konsole + Joy‑Cons)',
+      price: 189,
+      shipping: 6.49,
+      condition: 'Gut',
+      url: 'https://en.wikipedia.org/wiki/File:Nintendo-Switch-Console-Docked-wJoyConRB.jpg',
+      image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Nintendo-Switch-Console-Docked-wJoyConRB.jpg/800px-Nintendo-Switch-Console-Docked-wJoyConRB.jpg'
+    },
+    {
+      id: 'demo_macbook',
+      source: 'demo',
+      title: 'MacBook Pro 13" – 2020 – 256 GB',
+      price: 599,
+      shipping: 0,
+      condition: 'Gut',
+      url: '',
+      image: ''
+    },
+    {
+      id: 'demo_gopro',
+      source: 'demo',
+      title: 'GoPro HERO11 Black – Actioncam',
+      price: 239,
+      shipping: 4.99,
+      condition: 'Sehr gut',
+      url: '',
+      image: ''
+    },
+    {
+      id: 'demo_air_jordan_1',
+      source: 'demo',
+      title: 'Air Jordan 1 High OG – Black/White/Red (Beispiel)',
+      price: 229,
+      shipping: 0,
+      condition: 'Sehr gut',
+      url: 'https://www.nike.com/gb/t/air-jordan-1-retro-high-og-latte-shoes-lBYfzLH0',
+      image: 'https://static.nike.com/a/images/t_prod_ss/w_960,c_limit,f_auto/7cbdc9e1-bd62-48e2-9f4e-760a7e3f51bd/air-jordan-1-retro-high-og-latte-shoes-lBYfzLH0.png'
+    },
+    {
+      id: 'demo_dyson',
+      source: 'demo',
+      title: 'Dyson V11 – Akku Staubsauger',
+      price: 249,
+      shipping: 0,
+      condition: 'Gut',
+      url: '',
+      image: ''
+    },
+    {
+      id: 'demo_apple_watch',
+      source: 'demo',
+      title: 'Apple Watch Series 8 – 45mm',
+      price: 189,
+      shipping: 4.99,
+      condition: 'Gut',
+      url: '',
+      image: ''
+    },
+    {
+      id: 'demo_gpu',
+      source: 'demo',
+      title: 'RTX 3060 – 12 GB – Grafikkarte',
+      price: 199,
+      shipping: 6.99,
+      condition: 'Gut',
+      url: '',
+      image: ''
+    },
+    {
+      id: 'demo_bose',
+      source: 'demo',
+      title: 'Bose QuietComfort 45 – Kopfhörer',
+      price: 169,
+      shipping: 4.99,
+      condition: 'Sehr gut',
+      url: '',
+      image: ''
+    },
+    {
+      id: 'demo_camera',
+      source: 'demo',
+      title: 'Sony Alpha 7 III – Body',
+      price: 899,
+      shipping: 0,
+      condition: 'Sehr gut',
+      url: '',
+      image: ''
+    },
+  ];
+
+  function loadDemo() {
+    listings = DEMO.map((x) => ({ ...x }));
+    compareIds = [];
+    activeItem = null;
+    renderResults();
+    resetAnalysis();
+    showToast('Demo (12+) geladen');
+  }
+
+  // ---------- Rendering
+  const resultsEl = $('results');
+
+  function badgeClass(src) {
+    if (src === 'ebay') return 'badge ebay';
+    if (src === 'vinted') return 'badge vinted';
+    if (src === 'kleinanzeigen') return 'badge kleinanzeigen';
+    return 'badge demo';
+  }
+  function badgeLabel(src) {
+    if (src === 'ebay') return 'eBay';
+    if (src === 'vinted') return 'Vinted';
+    if (src === 'kleinanzeigen') return 'Kleinanzeigen';
+    return 'Demo';
+  }
+  function allIn(x) {
+    return (Number(x.price) || 0) + (Number(x.shipping) || 0);
+  }
+
+  function renderResults() {
+    resultsEl.innerHTML = '';
+    if (!listings.length) {
+      resultsEl.innerHTML = '<div class="panel" style="grid-column:1/-1;">Keine Ergebnisse. Nutze Suche / Trending oder lade Demo.</div>';
+      updateCompareUI();
+      return;
+    }
+
+    for (const it of listings) {
+      const picked = compareIds.includes(it.id);
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const img = it.image || placeholderDataUri(it.title);
+
+      card.innerHTML = `
+        <div class="thumb">
+          <img src="${img}" alt="${escapeHTML(it.title)}" loading="lazy"/>
+          <span class="${badgeClass(it.source)}">${badgeLabel(it.source)}</span>
+        </div>
+        <div class="content">
+          <div class="title">${escapeHTML(it.title)}</div>
+          <div class="meta">${escapeHTML(it.condition || '—')} • All‑in: ${euro(allIn(it))}</div>
+          <div class="priceRow">
+            <div>
+              <div class="price">${euro(it.price)}</div>
+              <div class="meta">Versand: ${it.shipping ? euro(it.shipping) : '—'}</div>
+            </div>
+            <button class="btn ghost" data-pick="${it.id}">${picked ? 'Hinzugefügt' : 'Zum Vergleich'}</button>
+          </div>
+          <div class="rowActions">
+            <button class="btn primary" data-analyze="${it.id}">Analysieren</button>
+            <a class="btn" ${it.url ? `href="${it.url}" target="_blank" rel="noopener"` : 'href="#"'}>${it.url ? 'Öffnen' : 'Kein Link'}</a>
+          </div>
+        </div>
+      `;
+
+      const imgEl = card.querySelector('img');
+      imgEl.addEventListener('error', () => {
+        imgEl.src = placeholderDataUri(it.title);
+      }, { once: true });
+
+      resultsEl.appendChild(card);
+    }
+
+    resultsEl.querySelectorAll('[data-pick]').forEach((b) =>
+      b.addEventListener('click', () => togglePick(b.dataset.pick))
+    );
+    resultsEl.querySelectorAll('[data-analyze]').forEach((b) =>
+      b.addEventListener('click', () => analyzeById(b.dataset.analyze))
+    );
+
+    updateCompareUI();
+  }
+
+  function updateCompareUI() {
+    $('btnCompareTop').textContent = `Vergleichen (${compareIds.length}/2)`;
+    $('compareText').textContent = `Vergleich: ${compareIds.length}/2 ausgewählt`;
+    $('compareBar').style.display = compareIds.length ? 'block' : 'none';
+  }
+
+  function togglePick(id) {
+    if (compareIds.includes(id)) compareIds = compareIds.filter((x) => x !== id);
+    else {
+      if (compareIds.length >= 2) return showToast('Maximal 2 vergleichen');
+      compareIds.push(id);
+    }
+    renderResults();
+  }
+
+  // ---------- Compare modal
+  const compareModal = $('compareModal');
+  function openCompare() {
+    if (compareIds.length !== 2) return showToast('Bitte 2 Listings auswählen');
+    compareModal.classList.add('open');
+    compareModal.setAttribute('aria-hidden', 'false');
+    renderCompare();
+  }
+  function closeCompare() {
+    compareModal.classList.remove('open');
+    compareModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function renderCompare() {
+    const a = listings.find((x) => x.id === compareIds[0]);
+    const b = listings.find((x) => x.id === compareIds[1]);
+    if (!a || !b) return;
+
+    $('cmpAmeta').textContent = `${badgeLabel(a.source)} • Versand ${a.shipping ? euro(a.shipping) : '—'}`;
+    $('cmpBmeta').textContent = `${badgeLabel(b.source)} • Versand ${b.shipping ? euro(b.shipping) : '—'}`;
+    $('cmpAprice').textContent = euro(a.price);
+    $('cmpBprice').textContent = euro(b.price);
+    $('cmpAall').textContent = `All‑in: ${euro(allIn(a))}`;
+    $('cmpBall').textContent = `All‑in: ${euro(allIn(b))}`;
+
+    const feePct = $('feePct').value;
+    const fee = feePct === '' ? null : clamp(Number(feePct), 0, 50) / 100;
+    const perspective = $('perspective').value;
+
+    const aAll = allIn(a);
+    const bAll = allIn(b);
+    const aFees = fee == null ? null : Math.round(a.price * fee * 100) / 100;
+    const bFees = fee == null ? null : Math.round(b.price * fee * 100) / 100;
+    const aNet = aFees == null ? null : Math.round((a.price - aFees) * 100) / 100;
+    const bNet = bFees == null ? null : Math.round((b.price - bFees) * 100) / 100;
+
+    $('tAprice').textContent = euro(a.price);
+    $('tBprice').textContent = euro(b.price);
+    $('tAship').textContent = a.shipping ? euro(a.shipping) : '—';
+    $('tBship').textContent = b.shipping ? euro(b.shipping) : '—';
+    $('tAall').textContent = euro(aAll);
+    $('tBall').textContent = euro(bAll);
+    $('tAfee').textContent = aFees == null ? '—' : euro(aFees);
+    $('tBfee').textContent = bFees == null ? '—' : euro(bFees);
+    $('tAnet').textContent = aNet == null ? '—' : euro(aNet);
+    $('tBnet').textContent = bNet == null ? '—' : euro(bNet);
+
+    let winner = '';
+    if (perspective === 'buyer') {
+      if (aAll === bAll) winner = 'Käufer‑Sicht: Gleich teuer (All‑in).';
+      else winner = `Käufer‑Sicht: <b>${aAll < bAll ? 'A' : 'B'}</b> ist günstiger (All‑in).`;
+    } else {
+      if (fee == null) winner = 'Verkäufer‑Sicht: Bitte Gebühren % eintragen.';
+      else {
+        if (aNet === bNet) winner = `Verkäufer‑Sicht: Gleiches Netto (${euro(aNet)}).`;
+        else winner = `Verkäufer‑Sicht: <b>${aNet > bNet ? 'A' : 'B'}</b> bringt mehr Netto. (A ${euro(aNet)} · B ${euro(bNet)})`;
+      }
+    }
+
+    $('cmpWinner').innerHTML = winner;
+  }
+
+  // ---------- Analysis
+  function resetAnalysis() {
+    $('outRange').textContent = '—';
+    $('outSweet').textContent = '—';
+    $('outDays').textContent = '—';
+    $('outSpeedHint').textContent = '—';
+    $('outTitle').textContent = '—';
+  }
+
+  function estimate(item) {
+    const p = Number(item.price) || 0;
+    const ship = Number(item.shipping) || 0;
+    const anchor = Math.max(5, p);
+    const uncertainty = item.source === 'ebay' ? 0.18 : item.source === 'vinted' ? 0.23 : item.source === 'kleinanzeigen' ? 0.26 : 0.25;
+    const low = Math.max(5, Math.round(anchor * (1 - uncertainty)));
+    const high = Math.max(low + 2, Math.round(anchor * (1 + uncertainty)));
+    const sweet = Math.round((low + high) / 2);
+
+    let daysMin = 2;
+    let daysMax = 9;
+    if (anchor > 200) { daysMin += 2; daysMax += 7; }
+    if ((item.title || '').toLowerCase().includes('airpods')) { daysMin -= 1; daysMax -= 2; }
+    daysMin = clamp(daysMin, 1, 30);
+    daysMax = clamp(daysMax, daysMin + 1, 45);
+
+    const titleOpt = `${item.title} | ${item.condition || 'Top'} | Schnellversand`;
+    const summary = `Range: €${low}–€${high} (Sweet €${sweet}) · Sell‑Speed: ${daysMin}–${daysMax} Tage · All‑in: ${euro(anchor + ship)}`;
+
+    return { low, high, sweet, daysMin, daysMax, titleOpt, summary };
+  }
+
+  function analyzeItem(item) {
+    activeItem = item;
+    const r = estimate(item);
+    $('outRange').textContent = `€${r.low}–€${r.high}`;
+    $('outSweet').textContent = `Sweet Spot: €${r.sweet} · All‑in: ${euro(allIn(item))}`;
+    $('outDays').textContent = `${r.daysMin}–${r.daysMax} Tage`;
+    $('outSpeedHint').textContent =
+      item.source === 'ebay' ? 'eBay Daten: stabilere Schätzung.' :
+      item.source === 'vinted' ? 'Vinted: Link‑Import (weniger Marktdaten).' :
+      item.source === 'kleinanzeigen' ? 'Kleinanzeigen: Link‑Import (weniger Marktdaten).' :
+      'Demo: grobe Schätzung.';
+    $('outTitle').textContent = r.titleOpt;
+    showToast('Analyse aktualisiert');
+    location.hash = '#tools';
+  }
+
+  function analyzeById(id) {
+    const it = listings.find((x) => x.id === id);
+    if (!it) return;
+    analyzeItem(it);
+  }
+
+  // ---------- API connectors
+  async function fetchJSON(url, opts) {
+    const res = await fetch(url, opts);
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      throw new Error(`${res.status} ${res.statusText}${t ? ' – ' + t.slice(0, 160) : ''}`);
+    }
+    return res.json();
+  }
+
+  async function searchEbay(query, limit) {
+    const u = `/.netlify/functions/ebay_search?q=${encodeURIComponent(query)}&limit=${encodeURIComponent(String(limit))}`;
+    const data = await fetchJSON(u);
+    return (data.items || []).map((x) => ({
+      id: `ebay_${x.id}`,
+      source: 'ebay',
+      title: x.title || 'eBay Item',
+      price: Number(x.price) || 0,
+      shipping: Number(x.shipping) || 0,
+      condition: x.condition || '—',
+      url: x.url || '',
+      image: x.image || '',
+    }));
+  }
+
+  // Single OG preview endpoint for Vinted + Kleinanzeigen
+  async function importOg(url) {
+    const u = `/.netlify/functions/og_preview?url=${encodeURIComponent(url)}`;
+    const data = await fetchJSON(u);
+
+    const source = /vinted\./i.test(url) ? 'vinted' : /kleinanzeigen\./i.test(url) ? 'kleinanzeigen' : 'demo';
+
+    return {
+      id: `${source}_${Date.now()}`,
+      source,
+      title: data.title || 'Listing',
+      price: Number(data.price) || 0,
+      shipping: 0,
+      condition: '—',
+      url: data.url || url,
+      image: data.image || '',
+    };
+  }
+
+  async function loadTrending() {
+    // Alpha approach:
+    // - If eBay endpoint is configured, fetch multiple searches and merge.
+    // - If not configured, fall back to demo.
+    const seeds = [
+      'airpods pro 2',
+      'air jordan 1 high og',
+      'iphone 13 128gb',
+      'playstation 5',
+      'nintendo switch',
+      'rtx 3060',
+    ];
+
+    $('btnTrending').disabled = true;
+    $('btnTrending').textContent = 'Lade…';
+
+    try {
+      const limitEach = 8;
+      const batches = await Promise.all(seeds.map((s) => searchEbay(s, limitEach)));
+      const merged = batches.flat();
+
+      // De-dupe by url/title
+      const seen = new Set();
+      const uniq = [];
+      for (const it of merged) {
+        const k = (it.url || it.title || '').toLowerCase();
+        if (!k || seen.has(k)) continue;
+        seen.add(k);
+        uniq.push(it);
+      }
+
+      listings = uniq.slice(0, 36);
+      compareIds = [];
+      activeItem = null;
+      renderResults();
+      resetAnalysis();
+      showToast(`Trending geladen: ${listings.length}`);
+      location.hash = '#market';
+    } catch (e) {
+      console.error(e);
+      showToast('Trending braucht eBay‑Endpoint → Demo geladen');
+      loadDemo();
+    } finally {
+      $('btnTrending').disabled = false;
+      $('btnTrending').textContent = 'Trending laden';
+    }
+  }
+
+  // ---------- Events
+  $('btnDemo').addEventListener('click', loadDemo);
+  $('btnTrending').addEventListener('click', loadTrending);
+
+  $('btnSearch').addEventListener('click', async () => {
+    const q = $('q').value.trim();
+    const source = $('source').value;
+    const limit = Number($('limit').value) || 12;
+
+    if (source === 'demo') return loadDemo();
+    if (!q) return showToast('Bitte Suchbegriff eingeben');
+
+    $('btnSearch').disabled = true;
+    $('btnSearch').textContent = 'Lade…';
+
+    try {
+      const items = await searchEbay(q, limit);
+      listings = items;
+      compareIds = [];
+      activeItem = null;
+      renderResults();
+      resetAnalysis();
+      showToast(items.length ? `eBay: ${items.length} Ergebnisse` : 'Keine Treffer');
+    } catch (err) {
+      console.error(err);
+      showToast('eBay Endpoint fehlt → Demo geladen');
+      loadDemo();
+    } finally {
+      $('btnSearch').disabled = false;
+      $('btnSearch').textContent = 'Suchen';
+    }
+  });
+
+  $('btnImport').addEventListener('click', async () => {
+    const url = $('importUrl').value.trim();
+    if (!url) return showToast('Bitte Link einfügen');
+
+    $('btnImport').disabled = true;
+    $('btnImport').textContent = 'Import…';
+
+    try {
+      if (/vinted\./i.test(url) || /kleinanzeigen\./i.test(url)) {
+        const it = await importOg(url);
+        listings = [it, ...listings];
+        renderResults();
+        analyzeItem(it);
+        showToast('Link importiert');
+      } else if (/ebay\./i.test(url)) {
+        showToast('Für eBay nutze Suche / Trending (API).');
+      } else {
+        showToast('Link muss Vinted / Kleinanzeigen / eBay sein');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Import braucht og_preview Endpoint → Demo bleibt aktiv');
+    } finally {
+      $('btnImport').disabled = false;
+      $('btnImport').textContent = 'Importieren';
+    }
+  });
+
+  $('btnCompareTop').addEventListener('click', openCompare);
+  $('btnOpenCompare').addEventListener('click', openCompare);
+  $('btnCloseCompare').addEventListener('click', closeCompare);
+  $('btnClearCompare').addEventListener('click', () => {
+    compareIds = [];
+    renderResults();
+  });
+
+  $('feePct').addEventListener('input', () => {
+    if (compareModal.classList.contains('open')) renderCompare();
+  });
+  $('perspective').addEventListener('change', () => {
+    if (compareModal.classList.contains('open')) renderCompare();
+  });
+
+  compareModal.addEventListener('click', (e) => {
+    if (e.target === compareModal) closeCompare();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeCompare();
+  });
+
+  $('btnCopyTitle').addEventListener('click', async () => {
+    try {
+      const t = $('outTitle').textContent;
+      await navigator.clipboard.writeText(t);
+      showToast('Titel kopiert');
+    } catch {
+      alert('Kopieren nicht möglich.');
+    }
+  });
+
+  $('btnCopySummary').addEventListener('click', async () => {
+    try {
+      if (!activeItem) return showToast('Erst analysieren');
+      const r = estimate(activeItem);
+      await navigator.clipboard.writeText(r.summary);
+      showToast('Summary kopiert');
+    } catch {
+      alert('Kopieren nicht möglich.');
+    }
+  });
+
+  function escapeHTML(s){
+    return String(s ?? '').replace(/[&<>\"']/g, (c) => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  // Boot: load demo so you always see content even without backend
+  loadDemo();
+
+  // Runtime tests
+  (function tests(){
+    const x = { price: 10, shipping: 2 };
+    if (allIn(x) !== 12) throw new Error('allIn failed');
+    const r = estimate({ source:'demo', title:'Test', price:100, shipping:0 });
+    if (!(r.low < r.high && r.sweet)) throw new Error('estimate failed');
+    const ph = placeholderDataUri('Hello');
+    if (!String(ph).startsWith('data:image/svg+xml')) throw new Error('placeholderDataUri failed');
+  })();
+</script>
+</body>
+</html>
